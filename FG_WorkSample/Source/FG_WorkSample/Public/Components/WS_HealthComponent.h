@@ -9,6 +9,7 @@
 DECLARE_MULTICAST_DELEGATE(FOnDeathSignature);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnDeathByInstigatorSignature, AActor*);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHealthChangedSignature, float, float);
+DECLARE_MULTICAST_DELEGATE(FOnStopInteractionSignature);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class FG_WORKSAMPLE_API UWS_HealthComponent : public UActorComponent
@@ -22,12 +23,16 @@ public:
 	FOnDeathSignature OnDeath;
 	FOnDeathByInstigatorSignature OnDeathByInstigator;
 	FOnHealthChangedSignature OnHealthChanged;
+	FOnStopInteractionSignature OnStopInteraction;
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
 		bool IsDead() const { return FMath::IsNearlyZero(Health); }
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
 		float GetHealthPercent() const { return Health / MaxHealth; }
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		void SetHasDeflectedDamage(const bool IsDone) { bHasDeflectedDamage = IsDone; };
 
 	float GetHealth() const { return Health; }
 
@@ -56,12 +61,16 @@ protected:
 private:
 
 	FTimerHandle HealTimerHandle;
+
 	float Health = 0.0f;
+
+	bool bHasDeflectedDamage = false;
 
 	UFUNCTION()
 		void OnTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 	void HealUpdate();
 	void SetHealth(float NewHealth);
-		
+
+	void ReportDamage(float Damage, AController* InstigatedBy);
 };

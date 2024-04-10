@@ -21,22 +21,32 @@ public:
 
 	virtual bool SetPause(APlayerController* PC, FCanUnpause CanUnpauseDelegate = FCanUnpause()) override;
 
-	bool SetQuestList(APlayerController* PC, FCanUnpause CanUnpauseDelegate = FCanUnpause());
-
 	virtual bool ClearPause() override;
 
 	void StartGame();
 	void Dead();
 
+	UFUNCTION(BlueprintCallable)
+		void GameOver();
+
+	UFUNCTION(BlueprintCallable)
+		void TheEnd();
+
+	UFUNCTION(BlueprintCallable)
+		float GetRemainingTime() const;
+
+	UFUNCTION(BlueprintCallable)
+		float GetGameTime() const { return GameTime; };
+
 private:
 
 	EGameWidgetState GameState = EGameWidgetState::WaitingToStart;
 
-	FTimerHandle GameOverTestTimer;// for test only
+	FTimerHandle GameOverTimerHandle;
 
-	void GameOver();
+	float GameTime = 420.f;
 
-	void GameTimerTestUpdate(); // for test only
+	void GameTimerUpdate();
 
 	void SetGameState(EGameWidgetState State);
 	void ResetPlayer();

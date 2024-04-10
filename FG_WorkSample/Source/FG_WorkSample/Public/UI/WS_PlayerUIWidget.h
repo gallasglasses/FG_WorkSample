@@ -62,7 +62,7 @@ protected:
 		UWidgetAnimation* DamageAnimation;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
-		FLinearColor HealthProgressBarColor = FLinearColor::Green;
+		FLinearColor HealthProgressBarColor = FLinearColor::Red;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UI")
 		FLinearColor ManaProgressBarColor = FLinearColor::Blue;

@@ -12,7 +12,31 @@ enum class EGameWidgetState : uint8
 	InProgress,
 	Pause,
 	PlayerMenu,
-	QuestList,
 	Death,
-	GameOver
+	GameOver,
+	TheEnd
+};
+
+UENUM(BlueprintType)
+enum class EBehaviorType : uint8
+{
+	Neutral = 0,
+	Friend = 1,
+	Monster = 2
+};
+
+UENUM(BlueprintType)
+enum class EInteractionType : uint8
+{
+	None = 0,
+	Open,
+	Loot
+};
+
+UENUM(BlueprintType)
+enum class EGameLevel : uint8
+{
+	MenuLevel,
+	LoadingLevel,
+	StartLevel
 };

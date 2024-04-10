@@ -6,16 +6,20 @@
 #include "Components/WS_HealthComponent.h"
 #include "Components/WS_StaminaComponent.h"
 #include "Components/WS_ManaComponent.h"
+#include "InteractionSystem/WS_InteractionComponent.h"
 
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/SphereComponent.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/DamageEvents.h"
+
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/Controller.h"
 
 DEFINE_LOG_CATEGORY_STATIC(BaseCharacterLog, All, All);
 
@@ -35,19 +39,33 @@ AWS_BaseCharacter::AWS_BaseCharacter(const FObjectInitializer& ObjInit)
 	CameraComponent->SetupAttachment(SpringArmComponent);
 	CameraComponent->SetRelativeRotation(FRotator(0.0f, -20.0f, 0.0f));
 
+	CameraCollisionComponent = CreateDefaultSubobject<USphereComponent>("CameraCollisionComponent");
+	CameraCollisionComponent->SetupAttachment(CameraComponent);
+	CameraCollisionComponent->SetSphereRadius(10.f);
+	CameraCollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+
 	SwordTriggerHitComponent = CreateDefaultSubobject<UBoxComponent>("SwordTriggerHitComponent");
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
 	SwordTriggerHitComponent->AttachToComponent(GetMesh(), AttachmentRules, "FX_Sword_Bottom");
-	SwordTriggerHitComponent->OnComponentBeginOverlap.AddDynamic(this, &AWS_BaseCharacter::OnOverlapHit);
 	SwordTriggerHitComponent->IgnoreActorWhenMoving(GetOwner(), true);
+	SwordTriggerHitComponent->IgnoreComponentWhenMoving(SwordTriggerHitComponent, true);
+	//SwordTriggerHitComponent->IgnoreComponentWhenMoving(InteractionComponent, true);
+	SwordTriggerHitComponent->IgnoreComponentWhenMoving(GetCapsuleComponent(), true);
+	SwordTriggerHitComponent->OnComponentBeginOverlap.AddDynamic(this, &AWS_BaseCharacter::OnOverlapHit);
 
 	HealthComponent = CreateDefaultSubobject<UWS_HealthComponent>("HealthComponent");
 	StaminaComponent = CreateDefaultSubobject<UWS_StaminaComponent>("StaminaComponent");
 	ManaComponent = CreateDefaultSubobject<UWS_ManaComponent>("ManaComponent");
+
+	InteractionComponent = CreateDefaultSubobject<UWS_InteractionComponent>("InteractionComponent");
+	InteractionComponent->SetupAttachment(GetRootComponent());
+
+	SetGenericTeamId(FGenericTeamId((int32)InitialTeam));
 }
 
 void AWS_BaseCharacter::Move(const FInputActionValue& Value)
 {
+	OnStopInteraction.Broadcast();
 	//if () return; check movement state of character
 
 	const FVector2D MovementVector = Value.Get<FVector2D>();
@@ -84,6 +102,10 @@ void AWS_BaseCharacter::BeginPlay()
 
 	check(HealthComponent);
 	check(GetCharacterMovement());
+	check(CameraCollisionComponent);
+
+	CameraCollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AWS_BaseCharacter::OnCameraCollisionBeginOverlap);
+	CameraCollisionComponent->OnComponentEndOverlap.AddDynamic(this, &AWS_BaseCharacter::OnCameraCollisionEndOverlap);
 
 	OnHealthChanged(HealthComponent->GetHealth(), 0.0f);
 	HealthComponent->OnDeath.AddUObject(this, &AWS_BaseCharacter::OnDeath);
@@ -123,30 +145,11 @@ void AWS_BaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AWS_BaseCharacter::Jump);
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Triggered, this, &AWS_BaseCharacter::OnStartRunning);
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &AWS_BaseCharacter::OnStopRunning);
-		/*EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &AWS_BaseCharacter::Interact);*/
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, InteractionComponent, &UWS_InteractionComponent::Interact);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, InteractionComponent, &UWS_InteractionComponent::StopInteract);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &AWS_BaseCharacter::Attack);
 		EnhancedInputComponent->BindAction(DeflectAction, ETriggerEvent::Started, this, &AWS_BaseCharacter::Deflect);
 	}
-}
-
-bool AWS_BaseCharacter::IsRunning() const
-{
-	return bIsRunning;
-}
-
-bool AWS_BaseCharacter::IsAttacking() const
-{
-	return bIsRunning;
-}
-
-bool AWS_BaseCharacter::IsDeflecting() const
-{
-	return bIsRunning;
-}
-
-bool AWS_BaseCharacter::IsMoving() const
-{
-	return bIsRunning;
 }
 
 float AWS_BaseCharacter::GetMovementDirection() const
@@ -160,8 +163,33 @@ float AWS_BaseCharacter::GetMovementDirection() const
 	return FMath::RadiansToDegrees(AngleBetween) * FMath::Sign(CrossProduct.Z);
 }
 
+bool AWS_BaseCharacter::IsAttackAction_Implementation()
+{
+	return bIsAttacking;
+}
+
+bool AWS_BaseCharacter::IsDeflectAction_Implementation()
+{
+	return bIsDeflecting;
+}
+
+void AWS_BaseCharacter::ChangePostProcess(bool HaveTo)
+{
+	if (HaveTo)
+	{
+		CameraComponent->PostProcessSettings.ColorSaturation = FVector4(1.f, 1.f, 1.f, 0.f);
+		CameraComponent->PostProcessSettings.ColorGamma = FVector4(1.f, 1.f, 1.f, 0.7f);
+	}
+	else
+	{
+		CameraComponent->PostProcessSettings.ColorSaturation = FVector4(1.f, 1.f, 1.f, 1.f);
+		CameraComponent->PostProcessSettings.ColorGamma = FVector4(1.f, 1.f, 1.f, 1.f);
+	}
+}
+
 void AWS_BaseCharacter::Attack()
 {
+	OnStopInteraction.Broadcast();
 	if (bIsAttacking)
 	{
 		bIsComboAttack = true;
@@ -184,6 +212,7 @@ void AWS_BaseCharacter::Dead()
 
 void AWS_BaseCharacter::Deflect()
 {
+	OnStopInteraction.Broadcast();
 	if (bIsDeflecting)
 	{
 		UE_LOG(BaseCharacterLog, Display, TEXT("Deflecting yet"));
@@ -245,6 +274,7 @@ void AWS_BaseCharacter::ResetCombo()
 {
 	ComboAttackCount = 0;
 	bIsComboAttack = false;
+	bIsDamageDone = false;
 	OnStopAttacking();
 	UE_LOG(BaseCharacterLog, Display, TEXT("Reset Combo"));
 }
@@ -273,6 +303,8 @@ void AWS_BaseCharacter::Running()
 void AWS_BaseCharacter::OnDeath()
 {
 	UE_LOG(BaseCharacterLog, Display, TEXT("%s, You are dead"), *GetName());
+	CameraComponent->PostProcessSettings.ColorSaturation = FVector4(1.f, 1.f, 1.f, 0.f);
+	CameraComponent->PostProcessSettings.ColorGamma = FVector4(1.f, 1.f, 1.f, 0.7f);
 	PlayAnimMontage(DeathAnimMontage);
 	GetCharacterMovement()->DisableMovement();
 	bIsAttacking = false;
@@ -372,17 +404,24 @@ void AWS_BaseCharacter::OnStopDeflecting()
 void AWS_BaseCharacter::MakeDamage(const FHitResult& HitResult)
 {
 	const auto HitActor = HitResult.GetActor();
-	if(!HitActor) return;
+	/*if(!HitActor) return;
+
+	if (HitActor == this)
+	{
+		return;
+	}*/
 	if (!bIsDamageDone)
 	{
-		HitActor->TakeDamage(WeaponDamageAmount, FDamageEvent(), GetPlayerController(), this);
+		UE_LOG(BaseCharacterLog, Display, TEXT("!!! %s, you got damage!!!!"), *HitResult.GetActor()->GetName());
+		HitActor->TakeDamage(WeaponDamageAmount, FDamageEvent{}, Controller/*GetPlayerController()*/, this);
 		bIsDamageDone = true;
-		//if (HitActor->Implements<UKillableObject>())
-		//{
-		//	//KillingComponent->ActorToKill = HitActor;
-		//	KillingComponent->Kill(HitActor);
-		//}
 	}
+}
+
+void AWS_BaseCharacter::CheckCameraOverlap()
+{
+	const auto NeedToHideMesh = CameraCollisionComponent->IsOverlappingComponent(GetCapsuleComponent());
+	GetMesh()->SetOwnerNoSee(NeedToHideMesh);
 }
 
 APlayerController* AWS_BaseCharacter::GetPlayerController() const
@@ -410,20 +449,33 @@ void AWS_BaseCharacter::OnGroundLanded(const FHitResult& Hit)
 
 void AWS_BaseCharacter::OnOverlapHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+
 	if (IsAttacking())
 	{
 		const auto HitActor = SweepResult.GetActor();
-		if (!HitActor)
-		{
-			return;
-		}
+		if (!HitActor) return;
+
 		if (HitActor == this)
 		{
 			return;
 		}
-		UE_LOG(BaseCharacterLog, Display, TEXT("%s, you got damage"), *SweepResult.GetActor()->GetName());
+		if (!Cast<UCapsuleComponent>(SweepResult.GetComponent()))
+		{
+			return;
+		}
+		//UE_LOG(BaseCharacterLog, Display, TEXT("%s, you got damage!!!!"), *SweepResult.GetActor()->GetName());
 
 		MakeDamage(SweepResult);
 	}
+}
+
+void AWS_BaseCharacter::OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	CheckCameraOverlap();
+}
+
+void AWS_BaseCharacter::OnCameraCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	CheckCameraOverlap();
 }
 

@@ -4,11 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "GenericTeamAgentInterface.h"
+#include "WS_CoreTypes.h"
 #include "InputActionValue.h"
+#include "Interfaces/WS_ActionableFeedback.h"
 #include "WS_BaseCharacter.generated.h"
 
 class UAnimMontage;
 class UBoxComponent;
+class USphereComponent;
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
@@ -17,13 +21,15 @@ class USpringArmComponent;
 class UWS_HealthComponent;
 class UWS_ManaComponent;
 class UWS_StaminaComponent;
+class UWS_InteractionComponent;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnGiveAnyStaminaSignature, bool);
 DECLARE_MULTICAST_DELEGATE(FOnGiveAnyManaSignature);
 DECLARE_MULTICAST_DELEGATE(FDeadSignature);
+DECLARE_MULTICAST_DELEGATE(FOnStopInteractionSignature);
 
 UCLASS()
-class FG_WORKSAMPLE_API AWS_BaseCharacter : public ACharacter
+class FG_WORKSAMPLE_API AWS_BaseCharacter : public ACharacter, public IWS_ActionableFeedback, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
@@ -35,6 +41,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 		UCameraComponent* CameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+		USphereComponent* CameraCollisionComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 		USpringArmComponent* SpringArmComponent;
@@ -50,6 +59,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 		UWS_ManaComponent* ManaComponent;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Components")
+		UWS_InteractionComponent* InteractionComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
 		UInputMappingContext* BaseCharacterContext;
@@ -93,6 +105,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Damage")
 		FVector2D LandedDamage = FVector2D(10.f, 100.f);
 
+	UPROPERTY(VisibleAnywhere, Category = "Behavior Type")
+		FGenericTeamId TeamID;
+
+	UPROPERTY(EditAnywhere, Category = "Behavior Type")
+		EBehaviorType InitialTeam = EBehaviorType::Neutral;
+
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 
@@ -105,16 +123,22 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-		bool IsRunning() const;
+		bool IsRunning() const { return bIsRunning; };
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-		bool IsAttacking() const;
+		bool IsAttacking() const { return bIsAttacking; };
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-		bool IsDeflecting() const;
+		bool IsDeflecting() const { return bIsDeflecting; };
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
-		bool IsMoving() const;
+		bool IsInsideSafeZone() const { return bIsInsideSafeZone; };
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		void SetIsInsideSafeZone(bool IsInside) { bIsInsideSafeZone = IsInside; };
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+		bool IsMoving() const { return bIsMoving; };
 
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 		float GetMovementDirection() const;
@@ -122,9 +146,21 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		float WeaponDamageAmount = 20.0f;
 
+	UFUNCTION(BlueprintCallable, Category = "Behavior Type")
+		virtual void SetGenericTeamId(const FGenericTeamId& NewTeamID) override { TeamID = NewTeamID; };
+
+	UFUNCTION(BlueprintCallable, Category = "Behavior Type")
+		virtual FGenericTeamId GetGenericTeamId() const override { return TeamID; }
+
+	bool IsAttackAction_Implementation() override;
+	bool IsDeflectAction_Implementation() override;
+
+	void ChangePostProcess(bool HaveTo);
+
 	FOnGiveAnyStaminaSignature OnGiveAnyStamina;
 	FOnGiveAnyManaSignature OnGiveAnyMana;
 	FDeadSignature OnDead;
+	FOnStopInteractionSignature OnStopInteraction;
 
 private:
 
@@ -144,6 +180,7 @@ private:
 	bool bIsDamageDone = false;
 	bool bIsComboAttack = false;
 	bool bIsDeflecting = false;
+	bool bIsInsideSafeZone = false;
 
 	void Attack();
 	void Dead();
@@ -161,6 +198,7 @@ private:
 	void OnStopRunning();
 	void OnStopDeflecting();
 	void MakeDamage(const FHitResult& HitResult);
+	void CheckCameraOverlap();
 
 	APlayerController* GetPlayerController() const;
 
@@ -170,5 +208,18 @@ private:
 	UFUNCTION()
 		void OnOverlapHit(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION()
+		void OnCameraCollisionBeginOverlap(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor,
+			UPrimitiveComponent* OtherComp,
+			int32 OtherBodyIndex,
+			bool bFromSweep,
+			const FHitResult& SweepResult);
+
+	UFUNCTION()
+		void OnCameraCollisionEndOverlap(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor,
+			UPrimitiveComponent* OtherComp,
+			int32 OtherBodyIndex);
 
 };
