@@ -8,7 +8,17 @@ public class FG_WorkSample : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[] 
+        { 
+            "Core", 
+            "CoreUObject", 
+            "Engine", 
+            "InputCore", 
+            "EnhancedInput",
+            "Niagara",
+            "GameplayTasks",
+            "NavigationSystem"
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
@@ -16,6 +26,10 @@ public class FG_WorkSample : ModuleRules
         {
             "FG_WorkSample/Public/Player",
             "FG_WorkSample/Public/Components",
+            "FG_WorkSample/Public/Pickups",
+            "FG_WorkSample/Public/AI",
+            "FG_WorkSample/Public/AI/Tasks",
+            "FG_WorkSample/Public/AI/Services",
             "FG_WorkSample/Public/"
         });
         // Uncomment if you are using Slate UI

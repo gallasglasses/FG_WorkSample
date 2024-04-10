@@ -6,7 +6,6 @@
 #include "WS_GameModeBase.h"
 #include "Blueprint/UserWidget.h"
 #include "Player/WS_BaseCharacter.h"
-//#include "QuestList.h"
 #include "WS_Utils.h"
 //#include "Loading/KP_LoadingScreenWidget.h"
 
@@ -17,12 +16,6 @@ UUserWidget* AWS_GameHUD::CreateWidgetByClass(const TSubclassOf<UUserWidget> Wid
 	CurrentWidget = CreateWidget<UUserWidget>(GetWorld(), WidgetClass);
 	if (CurrentWidget)
 	{
-		/*if (State == EGameWidgetState::QuestList)
-		{
-			const auto Player = Cast<AWS_BaseCharacter>(GetOwningPawn());
-			const auto QuestList = Cast<UQuestList>(CurrentWidget);
-			QuestList->Init(WS_Utils::GetPlayerComponent<UQuestListComponent>(Player));
-		}*/
 		CurrentWidget->AddToViewport(ZOrder);
 		/*if (State == EGameWidgetState::WaitingToStart)
 		{
