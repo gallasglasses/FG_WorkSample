@@ -49,7 +49,6 @@ AWS_BaseCharacter::AWS_BaseCharacter(const FObjectInitializer& ObjInit)
 	SwordTriggerHitComponent->AttachToComponent(GetMesh(), AttachmentRules, "FX_Sword_Bottom");
 	SwordTriggerHitComponent->IgnoreActorWhenMoving(GetOwner(), true);
 	SwordTriggerHitComponent->IgnoreComponentWhenMoving(SwordTriggerHitComponent, true);
-	//SwordTriggerHitComponent->IgnoreComponentWhenMoving(InteractionComponent, true);
 	SwordTriggerHitComponent->IgnoreComponentWhenMoving(GetCapsuleComponent(), true);
 	SwordTriggerHitComponent->OnComponentBeginOverlap.AddDynamic(this, &AWS_BaseCharacter::OnOverlapHit);
 
@@ -66,17 +65,10 @@ AWS_BaseCharacter::AWS_BaseCharacter(const FObjectInitializer& ObjInit)
 void AWS_BaseCharacter::Move(const FInputActionValue& Value)
 {
 	OnStopInteraction.Broadcast();
-	//if () return; check movement state of character
 
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 
 	bIsMoving = MovementVector.Y != 0 || MovementVector.X != 0;
-
-	/*const FVector Forward = GetActorForwardVector();
-	AddMovementInput(Forward, MovementVector.Y);
-
-	const FVector Right = GetActorRightVector();
-	AddMovementInput(Right, MovementVector.X);*/
 
 	const FRotator Rotation = Controller->GetControlRotation();
 	const FRotator YawRotation(0.f, Rotation.Yaw, 0.f);
@@ -111,7 +103,8 @@ void AWS_BaseCharacter::BeginPlay()
 	HealthComponent->OnDeath.AddUObject(this, &AWS_BaseCharacter::OnDeath);
 	HealthComponent->OnHealthChanged.AddUObject(this, &AWS_BaseCharacter::OnHealthChanged);
 
-	StaminaComponent->OnExhausted.AddUObject(this, &AWS_BaseCharacter::OnExhausted);
+	StaminaComponent->OnExhausted.AddUObject(this, &AWS_BaseCharacter::OnStopRunning);
+
 	//OnStaminaChanged(StaminaComponent->GetStamina(), 0.0f);
 
 	//ManaComponent->OnMuggle.AddUObject(this, &AWS_BaseCharacter::OnMuggle);
@@ -125,13 +118,11 @@ void AWS_BaseCharacter::BeginPlay()
 			Subsystem->AddMappingContext(BaseCharacterContext, 0);
 		}
 	}
-	
 }
 
 void AWS_BaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void AWS_BaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -143,10 +134,13 @@ void AWS_BaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AWS_BaseCharacter::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AWS_BaseCharacter::Look);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &AWS_BaseCharacter::Jump);
+
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Triggered, this, &AWS_BaseCharacter::OnStartRunning);
 		EnhancedInputComponent->BindAction(RunAction, ETriggerEvent::Completed, this, &AWS_BaseCharacter::OnStopRunning);
+
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, InteractionComponent, &UWS_InteractionComponent::Interact);
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Completed, InteractionComponent, &UWS_InteractionComponent::StopInteract);
+
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &AWS_BaseCharacter::Attack);
 		EnhancedInputComponent->BindAction(DeflectAction, ETriggerEvent::Started, this, &AWS_BaseCharacter::Deflect);
 	}
@@ -327,15 +321,7 @@ void AWS_BaseCharacter::OnExhausted()
 
 void AWS_BaseCharacter::OnHealthChanged(float Health, float HealthDelta)
 {
-	/*HealthTextComponent->SetText(FText::FromString(FString::Printf(TEXT("%.0f"), Health)));
-
-	const auto HealthBarWidget = Cast<UWS_HealthBarWidget>(HealthWidgetComponent->GetUserWidgetObject());
-	if (!HealthBarWidget)
-	{
-		return;
-	}
-	HealthBarWidget->SetHealthPercent(HealthComponent->GetHealthPercent());
-	HealthBarWidget->SetScaleDamage(HealthDelta);*/
+	//add some effects to mesh
 }
 
 void AWS_BaseCharacter::OnPlayAnimMontage(int8 Count)
@@ -355,10 +341,15 @@ void AWS_BaseCharacter::OnPlayAnimMontage(int8 Count)
 
 void AWS_BaseCharacter::OnStartRunning()
 {
-	bWantsToRun = true;
-	//UE_LOG(BaseCharacterLog, Display, TEXT("OnStartRunning"));
-
-	Running();
+	if (!StaminaComponent->IsExhausted())
+	{
+		bWantsToRun = true;
+		Running();
+	}
+	else
+	{
+		OnStopRunning();
+	}
 }
 
 void AWS_BaseCharacter::OnStopAttacking()
@@ -404,16 +395,11 @@ void AWS_BaseCharacter::OnStopDeflecting()
 void AWS_BaseCharacter::MakeDamage(const FHitResult& HitResult)
 {
 	const auto HitActor = HitResult.GetActor();
-	/*if(!HitActor) return;
-
-	if (HitActor == this)
-	{
-		return;
-	}*/
+	
 	if (!bIsDamageDone)
 	{
 		UE_LOG(BaseCharacterLog, Display, TEXT("!!! %s, you got damage!!!!"), *HitResult.GetActor()->GetName());
-		HitActor->TakeDamage(WeaponDamageAmount, FDamageEvent{}, Controller/*GetPlayerController()*/, this);
+		HitActor->TakeDamage(WeaponDamageAmount, FDamageEvent{}, Controller, this);
 		bIsDamageDone = true;
 	}
 }

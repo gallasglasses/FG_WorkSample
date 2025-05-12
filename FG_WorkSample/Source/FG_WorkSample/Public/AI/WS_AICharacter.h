@@ -54,7 +54,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Pickup")
 		TSubclassOf<AWS_HealthPickup> HealthPickupClass;
 
-	/*You need to check this value in BehaviorTree for this actor in service IsPlayerInRange. The value must be the same.*/
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Damage")
 		float AttackRange = 0.f;
 
@@ -140,7 +139,6 @@ private:
 	void OnHealthChanged(float Health, float HealthDelta);
 	void OnPlayAnimMontage(int8 Count);
 	void StopAttack();
-	//void MakeDamage(const FHitResult& HitResult);
 	void AIDestroy();
 
 	UFUNCTION()

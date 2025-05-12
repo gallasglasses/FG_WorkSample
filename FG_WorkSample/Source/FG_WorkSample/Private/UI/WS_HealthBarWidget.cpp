@@ -21,11 +21,6 @@ void UWS_HealthBarWidget::SetHealthPercent(float Percent)
 	HealthProgressBar->SetFillColorAndOpacity(HealthProgressBarColor);
 
 	HealthProgressBar->SetPercent(Percent);
-
-	/*if (FMath::IsNearlyZero(Percent))
-	{
-		StatusImage->SetVisibility(ESlateVisibility::Hidden);
-	}*/
 }
 
 void UWS_HealthBarWidget::SetScaleDamage(float Damage)

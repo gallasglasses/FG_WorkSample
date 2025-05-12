@@ -7,7 +7,6 @@
 #include "WS_HealthBarWidget.generated.h"
 
 class UProgressBar;
-class UImage;
 class UTextBlock;
 class UWidgetAnimation;
 
@@ -27,9 +26,6 @@ public:
 protected:
 	UPROPERTY(meta = (BindWidget))
 		UProgressBar* HealthProgressBar;
-
-	/*UPROPERTY(meta = (BindWidget))
-		UImage* StatusImage;*/
 
 	UPROPERTY(meta = (BindWidget))
 		UTextBlock* ScaleDamage;

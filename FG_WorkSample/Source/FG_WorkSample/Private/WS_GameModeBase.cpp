@@ -109,7 +109,7 @@ void AWS_GameModeBase::StartGame()
 	UE_LOG(WS_GameModeBaseLog, Display, TEXT("************ START GAME ************"));
 	SetGameState(EGameWidgetState::InProgress);
 
-	GetWorldTimerManager().SetTimer(GameOverTimerHandle, this, &AWS_GameModeBase::GameTimerUpdate, GameTime, false); // for test
+	GetWorldTimerManager().SetTimer(GameOverTimerHandle, this, &AWS_GameModeBase::GameTimerUpdate, GameTime, false);
 }
 
 void AWS_GameModeBase::GameTimerUpdate()

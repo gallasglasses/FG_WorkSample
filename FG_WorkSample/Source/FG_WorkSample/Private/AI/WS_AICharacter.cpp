@@ -62,8 +62,6 @@ void AWS_AICharacter::BeginPlay()
 	}
 
 	LandedDelegate.AddDynamic(this, &AWS_AICharacter::OnGroundLanded);
-
-	//bIsAwakening = true;
 }
 
 void AWS_AICharacter::OnDeath(AActor* Killer)
@@ -79,16 +77,6 @@ void AWS_AICharacter::OnDeath(AActor* Killer)
 		OnStopAttacking();
 		AIDestroy();
 	}
-
-	//GetCharacterMovement()->DisableMovement(); //UCharacterMovementComponent * GetCharacterMovement() const
-	//GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	//OnStopAttacking();
-	//WeaponComponent->OnWantToStopAttacking();
-
-	/*if (!Cast<AWS_BaseCharacter>(Killer))
-	{
-		AIDestroy();
-	}*/
 }
 
 bool AWS_AICharacter::CanCounterattack() const
@@ -124,7 +112,6 @@ void AWS_AICharacter::OnStartAttacking()
 void AWS_AICharacter::OnStopAttacking()
 {
 	//UE_LOG(AICharacterLog, Display, TEXT("On Stop Attack"));
-	
 	StopAttack();
 }
 
