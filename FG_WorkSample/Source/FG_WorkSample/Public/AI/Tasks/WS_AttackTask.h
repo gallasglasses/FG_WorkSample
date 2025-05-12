@@ -6,9 +6,6 @@
 #include "BehaviorTree/BTTaskNode.h"
 #include "WS_AttackTask.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class FG_WORKSAMPLE_API UWS_AttackTask : public UBTTaskNode
 {

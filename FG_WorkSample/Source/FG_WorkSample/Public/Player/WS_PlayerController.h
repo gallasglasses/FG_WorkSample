@@ -19,8 +19,6 @@ public:
 
 	AWS_PlayerController();
 
-	//virtual bool SetPause(bool bPause, FCanUnpause CanUnpauseDelegate = FCanUnpause()) override;
-
 protected:
 
 	UPROPERTY(EditAnywhere, Category = "Input")

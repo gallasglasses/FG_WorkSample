@@ -13,30 +13,16 @@ AWS_BasePickup::AWS_BasePickup()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	/*SceneComponent = CreateDefaultSubobject<USceneComponent>("SceneComponent");
-	SetRootComponent(SceneComponent);*/
-
 	PickupStaticMesh = CreateDefaultSubobject<UStaticMeshComponent>("PickupStaticMesh");
 	SetRootComponent(PickupStaticMesh);
-	//PickupStaticMesh->SetupAttachment(SceneComponent);
 	PickupStaticMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	PickupStaticMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 	PickupStaticMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
-
-	//CollisionComponent = CreateDefaultSubobject<USphereComponent>("SphereComponent");
-	//CollisionComponent->InitSphereRadius(50.f);
-	//CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	//CollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
-	//CollisionComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
-	////SetRootComponent(CollisionComponent);
-	//CollisionComponent->SetupAttachment(PickupStaticMesh);
 }
 
 void AWS_BasePickup::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//check(CollisionComponent);
 
 	if (bIsRotatingPickup)
 	{
@@ -76,7 +62,6 @@ void AWS_BasePickup::Tick(float DeltaTime)
 	{
 		AddActorLocalRotation(FRotator(0.f, RotationYaw, 0.f));
 	}
-
 }
 
 bool AWS_BasePickup::GivePickupTo(AWS_BaseCharacter* PlayerPawn)

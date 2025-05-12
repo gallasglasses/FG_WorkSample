@@ -16,12 +16,6 @@ AWS_PlayerController::AWS_PlayerController()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-//bool AWS_PlayerController::SetPause(bool bPause, FCanUnpause CanUnpauseDelegate)
-//{
-//	const auto PauseSet = Super::SetPause(bPause, CanUnpauseDelegate);
-//	return PauseSet;
-//}
-
 void AWS_PlayerController::BeginPlay()
 {
 	Super::BeginPlay();

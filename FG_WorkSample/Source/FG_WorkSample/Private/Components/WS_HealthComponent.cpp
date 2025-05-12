@@ -53,15 +53,7 @@ void UWS_HealthComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, co
 	if (Damage <= 0.f || IsDead() || !GetWorld() || !DamagedActor || bHasDeflectedDamage) return;
 
 	const auto CharacterDamaged = Cast<AWS_BaseCharacter>(DamagedActor);
-	/*if (CharacterDamaged && CharacterDamaged->IsBlocking())
-	{
-		const auto AbilitiesComponent = WS_Utils::GetPlayerComponent<UKP_CharacterAbilitiesComponent>(CharacterDamaged);
-		if (!AbilitiesComponent) return;
-
-		const auto Shield = Cast<AKP_Shield>(AbilitiesComponent->GetShield());
-		if (!Shield) return;
-		Damage = Damage * Shield->GetTransmittedDamagePercent();
-	}*/
+	
 	if (CharacterDamaged && DamageCauser)
 	{
 		OnStopInteraction.Broadcast();
@@ -93,7 +85,7 @@ void UWS_HealthComponent::HealUpdate()
 {
 	SetHealth(Health + HealModifier);
 
-	if (FMath::IsNearlyEqual(Health, MaxHealth) && GetWorld())
+	if (IsHealthFull() && GetWorld())
 	{
 		GetWorld()->GetTimerManager().ClearTimer(HealTimerHandle);
 	}

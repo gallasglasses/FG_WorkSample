@@ -65,12 +65,9 @@ void UWS_StaminaComponent::StaminaRecoveryUpdate()
 void UWS_StaminaComponent::StaminaDischargeUpdate()
 {
 	SetStamina(Stamina - StaminaDischargeModifier);
-	if (IsExhausted())
-	{
-		OnExhausted.Broadcast();
-	}
 	if (IsExhausted() && GetWorld())
 	{
+		OnExhausted.Broadcast(); 
 		GetWorld()->GetTimerManager().ClearTimer(StaminaDischargeTimerHandle);
 	}
 }

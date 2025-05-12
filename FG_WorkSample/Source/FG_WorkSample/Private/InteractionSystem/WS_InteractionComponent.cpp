@@ -58,14 +58,10 @@ void UWS_InteractionComponent::Interact()
 			InProgress = true;
 		}
 
-
 		HoldingTime = IWS_InteractableObject::Execute_GetHoldingTimeAmount(ActorToInteract);
 		InteractMessage->SetMaxHoldingTime(HoldingTime);
 		GetWorld()->GetTimerManager().SetTimer(HoldingTimerHandle, this, &UWS_InteractionComponent::PreExecuteInteract, HoldingTime, false);
 		GetWorld()->GetTimerManager().SetTimer(UpdatePercentHoldingTimerHandle, this, &UWS_InteractionComponent::UpdatePercent, 0.1f, true);
-		
-		/*HideInteractMessage();
-		IWS_InteractableObject::Execute_Interact(ActorToInteract, GetOwner());*/
 	}
 }
 
@@ -192,5 +188,4 @@ void UWS_InteractionComponent::PreExecuteInteract()
 void UWS_InteractionComponent::UpdatePercent()
 {
 	InteractMessage->SetTimePercent(HoldingTime - GetWorld()->GetTimerManager().GetTimerRemaining(HoldingTimerHandle));
-	
 }

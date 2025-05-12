@@ -95,9 +95,6 @@ void UWS_WeaponComponent::SpawnWeapon()
 
 	UE_LOG(WeaponComponentLog, Display, TEXT("Character"));
 
-	/*FActorSpawnParameters ActorSpawnParameters;
-	ActorSpawnParameters.Owner = Character;*/
-
 	CurrentWeapon = GetWorld()->SpawnActor<AWS_BaseWeapon>(WeaponClass);
 	CurrentWeapon->SetOwner(GetOwner());
 	if (!CurrentWeapon) return;

@@ -44,7 +44,6 @@ void AWS_ShrinkingSafeArea::NotifyActorBeginOverlap(AActor* OtherActor)
 {
 	Super::NotifyActorBeginOverlap(OtherActor);
 
-	//if (!OtherActor && !BaseCharacter && !Cast<AWS_BaseCharacter>(OtherActor)) return;
 	if (Cast<AWS_BaseCharacter>(OtherActor))
 	{
 		BaseCharacter = Cast<AWS_BaseCharacter>(OtherActor);
@@ -69,7 +68,6 @@ void AWS_ShrinkingSafeArea::NotifyActorEndOverlap(AActor* OtherActor)
 {
 	Super::NotifyActorEndOverlap(OtherActor);
 
-	//if (!OtherActor && !BaseCharacter && !Cast<AWS_BaseCharacter>(OtherActor)) return;
 	if (Cast<AWS_BaseCharacter>(OtherActor))
 	{
 		BaseCharacter = Cast<AWS_BaseCharacter>(OtherActor);
